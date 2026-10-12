@@ -1,0 +1,25 @@
+services:
+  prepare:
+    build: .
+    command: ["sh","-c","python -m tedkf.pipeline && python -m tedkf.runner"]
+    volumes:
+      - ./artifacts:/app/artifacts
+  api:
+    build: .
+    environment:
+      ARTIFACT_DIR: /app/artifacts
+    volumes:
+      - ./artifacts:/app/artifacts:ro
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
+  dashboard:
+    build: .
+    command: ["streamlit","run","frontend/app.py","--server.address","0.0.0.0","--server.port","8501"]
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:8501:8501"
+    depends_on: [api]
